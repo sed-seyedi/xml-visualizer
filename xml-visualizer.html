@@ -1,0 +1,120 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <style>
+            * {
+                font-family: monospace;
+            }
+            body {
+                margin:0px auto;
+                width: 600px;
+                margin-top:50px;
+                margin-bottom:50px;
+            }
+            .xmlvisual_block{
+                border: 1px dotted grey;
+                padding:20px;
+                position:relative;
+            }
+            .xmlvisual_block:first-child{
+                margin-top:20px;
+            }
+            .xmlvisual_block:not(:last-child){
+                margin-bottom:40px;
+            }
+            .xmlvisual_block__name{
+                position: absolute;
+                top:-18px;
+                left:-2px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>code</h1>
+        <textarea class="content" style="width:100%;height:200px;">
+<div>
+    <h1>
+        Good!
+    </h1>
+</div>
+        </textarea>
+        <h1>result</h1>
+        <div class="xmlvisual">
+        </div>
+        <script>
+            function xmlvisual(){
+                var content = $('.content').val();
+                var xmlvisual = $.parseHTML(content);
+                var $xmlvisual = $(xmlvisual);
+                var node = get_nodes_from_html(content);
+                console.log(node);
+                console.log(node_to_xmlvisual_html(node));
+                $(".xmlvisual").html(node_to_xmlvisual_html(node));
+            }
+            xmlvisual();
+            $('.content').bind('input propertychange', function() {
+                xmlvisual();
+            });
+            function node_to_xmlvisual_html(node){
+                var html = '';
+                $.each(node, function(i, el){
+                    var value = '';
+                    if(el.tag.charAt(0) == '#'){
+                        html += el.value;
+                    }else{
+                        /* open tag */
+                        html += '<div class="xmlvisual_block xmlvisual_tag__' + el.tag + '" data-tag="' + el.tag + '">';
+                        html += '<div class="xmlvisual_block__name">' + el.tag + '</div>';
+                        html += '<div class="xmlvisual_block__content" contenteditable>';
+                        /* add attributes */
+                        if(el.attrs.length !== 0){
+                            html += " ";
+                            $.each(el.attrs, function(y, a){
+                                // html += a.name + '="' + a.value + '"' + " ";
+                            });
+                        }
+                        /* get value */
+                        if(el.node.length !== 0){
+                            value = node_to_xmlvisual_html(el.node);
+                        }else{
+                            value = el.value;
+                        }
+                        html += value;
+                        /* add content and close tag */
+                        html += "</div>";
+                        html += "</div>";
+                    }
+                });
+                return html;
+            }
+            /* console.log($xmlvisual.filter('p').html()); */
+            function get_nodes_from_html(html){
+                var html_obj = $.parseHTML(html);
+                /* console.log(html_obj); */
+                var nodes = [];
+                $.each( html_obj, function( i, el ) {
+                    /* get value for each tag/#special (e.g. text) */
+                    var value = '';
+                    var inner_nodes = [];
+                    if(el.innerHTML){
+                        value = el.innerHTML;
+                        if(el.children && el.children.length != 0){
+                            inner_nodes = get_nodes_from_html(el.innerHTML);
+                        }
+                    }else{
+                        value = el.data;
+                    }
+                    /* get attributes */
+                    var attrs = [];
+                    if(el.attributes){
+                        $.each(el.attributes, function(i, atr){
+                            attrs.push({name:atr.name.toLowerCase(),value:atr.nodeValue});
+                        });
+                    }
+                    nodes.push({tag: el.nodeName.toLowerCase(), value:value, attrs:attrs, node:inner_nodes});
+                });
+                return nodes;
+            }
+        </script>
+    </body>
+</html>
